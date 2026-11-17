@@ -173,6 +173,55 @@ var radarVoicing = &Voicing{
 	CueTrimDb:  -6, // set by ear on 035T
 }
 
+// donutVoicing is a CANDIDATE shaped to the summary of 41C8's stock sound in
+// JOURNAL.md (2026-10-25), not fitted to stock's coefficients: about +20dB at
+// 80-160Hz up to 60% volume easing to +9dB at 100%, -7dB at 2.5kHz, +16-19dB
+// above 8kHz, compressor crossovers 70/500/7500Hz with +5dB in.
+//
+// Net fixed curve: +17dB at 80Hz, +19-20dB at 100-160Hz, +8dB at 250Hz,
+// -7dB at 2.5kHz, +12dB at 8kHz rising to +17dB at 12kHz, -10dB at 40Hz
+// under the high-pass. ByVolume takes up to 11dB of that bass away between
+// 60% and 100%.
+//
+// The compressor is donut's own MBCL.cfg (read off ...H2Q, 2026-11-16): +5dB
+// in, crossovers 70/500/7500Hz, band 1 20:1 from -50 (the bass guard, see
+// hardware.go), bands 2-4 4:1 from -12/-10/-10, every floor -40dB. Stock also
+// runs a limiter per band (band 1 at -8dB) and a full-band one at -2dBFS;
+// the chain has no per-band limiter, and the full-band one is the
+// limiterThreshold setting. Attack and release are not in the file and stay
+// biscuit's.
+//
+// Rendered offline at 60% volume (EQ flat, limiter on), it was preferred
+// blind by a large margin over the best 8-band EQ (one listener, one track,
+// 2026-11-16). Not yet heard through this chain.
+var donutVoicing = &Voicing{
+	Correction: []Peak{
+		{85, 14.5, 1.1},
+		{150, 14.5, 1.1},
+		{2500, -8, 1.0},
+	},
+	Shelf:          Shelf{6000, 18},
+	HighpassHz:     60,
+	Notch:          Peak{40, 0, 1}, // none
+	Crossovers:     [2]float64{500, 7500},
+	Upper:          [3]BandLaw{{4, -12, 20}, {4, -10, 10}, {4, -10, 10}},
+	UpperFloorDb:   -40,
+	UpperHoldMs:    30,
+	UpperReleaseMs: 100,
+	BassFloorDb:    -40,
+	BassHoldMs:     20,
+	ByVolume: []VolumeEQ{
+		{Hz: 115, Q: 0.9, Gains: []VolumeGain{{60, 0}, {100, -11}}},
+	},
+	// Stock's +5dB in.
+	CeilingDb: 5,
+	// The button floor (level 57) at -40dB. At the plain slope it was -30dB,
+	// and with the voicing's +17-20dB of bass and +12-17dB of treble, below
+	// the compressors' thresholds, 1-2% sounded like 10-15% on ...H2Q
+	// (2026-11-16). Full volume is unchanged; 50% is 5dB lower.
+	DbPerLevel: 45.0 / 70,
+}
+
 // BiscuitVoicing is biscuit's voicing, for the output chain's tests and its
 // default chain.
 func BiscuitVoicing() *Voicing { return biscuitVoicing }

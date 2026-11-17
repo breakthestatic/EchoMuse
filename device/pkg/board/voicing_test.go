@@ -47,11 +47,40 @@ func TestRadarBassFollowsVolumeDown(t *testing.T) {
 	}
 }
 
+// The donut's candidate takes bass away as the volume rises, as stock does
+// (+20dB up to 60%, +9dB at 100%).
+func TestDonutBassFollowsVolumeDown(t *testing.T) {
+	bass := donutVoicing.ByVolume[0]
+	prev := math.Inf(1)
+	for pct := 0.0; pct <= 100; pct += 5 {
+		g := bass.GainAt(pct)
+		if g > prev {
+			t.Fatalf("bass rises with volume at %g%%: %g after %g", pct, g, prev)
+		}
+		prev = g
+	}
+	if bass.GainAt(60) != 0 || bass.GainAt(100) != -11 {
+		t.Errorf("60%% %g, 100%% %g; want 0 and -11", bass.GainAt(60), bass.GainAt(100))
+	}
+}
+
 // Radar's button floor (level 57, internal/server volume.go) is at -33dB,
 // ea.3's floor; the plain slope put it at -28dB, loud on 035T.
 func TestRadarButtonFloor(t *testing.T) {
 	v := radarVoicing
 	if got := float64(57-127)*v.DbPerLevel + v.CeilingDb; math.Abs(got+33) > 1e-9 {
 		t.Errorf("radar floor %v dB, want -33", got)
+	}
+}
+
+// Donut's button floor is at -40dB; the plain slope put it at -30dB, which
+// the voicing's boosts made loud on ...H2Q. Full volume stays at +5dB.
+func TestDonutButtonFloor(t *testing.T) {
+	v := donutVoicing
+	if got := float64(57-127)*v.DbPerLevel + v.CeilingDb; math.Abs(got+40) > 1e-9 {
+		t.Errorf("donut floor %v dB, want -40", got)
+	}
+	if v.CeilingDb != 5 {
+		t.Errorf("donut ceiling %v dB, want 5", v.CeilingDb)
 	}
 }

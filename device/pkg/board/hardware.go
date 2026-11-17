@@ -394,8 +394,11 @@ var donutHardware = &Hardware{
 			{"LINEOUT Mux", []string{"VOICE_AMP"}},
 			{"HPOUT Mux", []string{"OPEN"}},
 		},
-		// Biscuit's band until the Dot 3's driver is measured.
-		BassGuard: BassBand{CrossoverHz: 115, ThresholdDb: -50},
+		// Band 1 of donut's own MBCL.cfg: 0-70Hz, 20:1 from -50dB (read off
+		// ...H2Q, stock FireOS files under emOS, 2026-11-16). Biscuit's 115Hz
+		// band would take the voicing's bass back out.
+		BassGuard: BassBand{CrossoverHz: 70, ThresholdDb: -50},
+		Voicing:   donutVoicing,
 	},
 }
 
